@@ -3,17 +3,32 @@ package main
 import (
 	"errors"
 	// "log"
+	"fmt"
 	"net/http"
 	"time"
-	"fmt"
 
+	"go-study/config"
 	"go-study/router"
 
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
+)
+
+var (
+	cfg = pflag.StringP("config", "c", "", "config path")
 )
 
 func main() {
+	pflag.Parse()
+
+	// init config
+	if err := config.Init(*cfg); err != nil {
+		panic(err)
+	}
+
 	g := gin.New()
+	gin.SetMode(viper.GetString("runmode"))
 
 	middleW := []gin.HandlerFunc{}
 
@@ -23,7 +38,7 @@ func main() {
 	)
 
 	go func() {
-		err := pingSer();
+		err := pingSer()
 
 		if err != nil {
 			fmt.Println("oh no")
@@ -32,12 +47,14 @@ func main() {
 		fmt.Println("success")
 	}()
 
-	http.ListenAndServe(":8077", g)
+	g.Run(viper.GetString("addr"))
+	// g.Run(":8077")
+	// http.ListenAndServe(":8077", g)
 }
 
 func pingSer() error {
 	for i := 0; i < 2; i++ {
-		res, err := http.Get("http:127.0.0.1:8077" + "/sd/health")
+		res, err := http.Get(viper.GetString("url") + "/sd/health")
 
 		if err == nil && res.StatusCode == 200 {
 			return nil

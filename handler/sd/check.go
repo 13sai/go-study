@@ -12,16 +12,16 @@ import (
 )
 
 const (
-	B = 1
-	KB = 1024*B
-	MB = 1024*KB
-	GB = 1024*MB
+	B  = 1
+	KB = 1024 * B
+	MB = 1024 * KB
+	GB = 1024 * MB
 )
 
 // 健康检测
 func HealthCheck(c *gin.Context) {
 	var msg = "ok"
-	c.String(http.StatusOK, "\r\n" + msg)
+	c.String(http.StatusOK, "\r\n"+msg)
 }
 
 func DiskCheck(c *gin.Context) {
@@ -44,10 +44,9 @@ func DiskCheck(c *gin.Context) {
 		text = "a little high!"
 	}
 
-	msg := fmt.Sprintf("%s - Free: %sM (%dG) / %dM (%dG)\r\n Used:%d%%", text, usedMB, usedGB, totalMB, totalGB, usedPer)
-	c.String(status, "\r\n" + msg)
+	msg := fmt.Sprintf("%s - Free: %dM (%dG) / %dM (%dG)\r\n Used:%d%%", text, usedMB, usedGB, totalMB, totalGB, usedPer)
+	c.String(status, "\r\n"+msg)
 }
-
 
 // CPUCheck checks the cpu usage.
 func CPUCheck(c *gin.Context) {
