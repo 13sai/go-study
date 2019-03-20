@@ -9,6 +9,7 @@ import (
 
 	"go-study/config"
 	"go-study/router"
+	"go-study/model"
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/pflag"
@@ -46,6 +47,10 @@ func main() {
 
 		fmt.Println("success")
 	}()
+
+	// init db
+	model.DB.Init()
+	defer model.DB.Close()
 
 	g.Run(viper.GetString("addr"))
 	// g.Run(":8077")
