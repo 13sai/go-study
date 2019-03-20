@@ -1,63 +1,64 @@
 package user
 
 import (
-	"fmt"
+	// "fmt"
 	// "net/http"
 
+	"go-study/model"
 	"go-study/pkg/errno"
 	. "go-study/handler"
 
 	"github.com/gin-gonic/gin"
-	"github.com/lexkong/log"
+	// "github.com/lexkong/log"
 )
 
 // Create creates a new user account.
 func Create(c *gin.Context) {
-	// var r struct {
-	// 	Username string `json:"username"`
-	// 	Password string `json:"password"`
-	// }
-
 	var r CreateRequest
 
-	// var err error
 	if err := c.Bind(&r); err != nil {
 		// c.JSON(http.StatusOK, gin.H{"error": errno.ErrBind})
 		SendResp(c, errno.ErrBind, nil)
 		return
 	}
 
-	admin := c.Param("username")
-	// pw := c.PostForm("password")
+	u := model.UserModel {
+		Username: r.Username,
+		Password: r.Password,
+	}
 
-	// r = CreateRequest {
-	// 	Username: admin,
-	// 	Password: pw,
-	// }
-
-	log.Infof("URL username: %s", admin)
-
-	desc := c.Query("desc")
-	log.Infof("URL params desc: %s", desc)
-
-	// log.Debugf("username is: [%s], password is [%s]", r.Username, r.Password)
-	if r.Username == "" {
-		SendResp(c, errno.New(errno.ErrUserNotFound, fmt.Errorf("username is empty")), nil)
+	if err := u.Validate(); err != nil {
+		SendResp(c, errno.ErrValidation, CreateResponse {
+			Username: r.Password,
+		})
 		return 
 	}
 
-	if r.Password == "" {
-		SendResp(c, fmt.Errorf("password is empty"), nil)
-		return
+	if err := u.Encrypt(); err != nil {
+		SendResp(c, errno.ErrEncrypt, nil)
+		return 
+	}
+
+	if err := u.Create(); err != nil {
+		SendResp(c, errno.ErrDatabase, nil)
+		return 
 	}
 
 	res := CreateResponse {
-		Username: admin,
+		Username: r.Username,
 	}
-	
 
 	SendResp(c, nil, res)
+}
 
-	// code, message := errno.DecodeErr(err)
-	// c.JSON(http.StatusOK, gin.H{"code": code, "message": message})
+func (r *CreateRequest) checkParmas() error {
+	if r.Username == "" {
+		return errno.New(errno.ErrValidation, nil).Add("username is empty.")
+	}
+
+	if r.Password == "" {
+		return errno.New(errno.ErrValidation, nil).Add("password is empty.")
+	}
+
+	return nil
 }

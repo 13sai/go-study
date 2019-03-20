@@ -12,3 +12,8 @@ log:
   log_rotate_date: 1
   log_rotate_size: 1024
   log_backuo_count: 7
+db:
+  name: sai_go
+  addr: 127.0.0.1:3308
+  username: root
+  password: 
