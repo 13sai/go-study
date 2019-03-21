@@ -1,217 +1,100 @@
 package user
 
 import (
-	"fmt"
+	// "fmt"
+	"strconv"
 	// "net/http"
 
+	"go-study/util"
+	"go-study/model"
+	"go-study/service"
 	"go-study/pkg/errno"
 	. "go-study/handler"
 
 	"github.com/gin-gonic/gin"
 	"github.com/lexkong/log"
+	"github.com/lexkong/log/lager"
 )
 
 // Create creates a new user account.
 func View(c *gin.Context) {
-	// var r struct {
-	// 	Username string `json:"username"`
-	// 	Password string `json:"password"`
-	// }
-
-	var r CreateRequest
-
-	// var err error
-	if err := c.Bind(&r); err != nil {
-		// c.JSON(http.StatusOK, gin.H{"error": errno.ErrBind})
-		SendResp(c, errno.ErrBind, nil)
+	username := c.Param("username")
+	// Get the user by the `username` from the database.
+	user, err := model.GetUser(username)
+	if err != nil {
+		SendResp(c, errno.ErrUserNotFound, nil)
 		return
 	}
 
-	admin := c.Param("username")
-	// pw := c.PostForm("password")
-
-	// r = CreateRequest {
-	// 	Username: admin,
-	// 	Password: pw,
-	// }
-
-	log.Infof("URL username: %s", admin)
-
-	desc := c.Query("desc")
-	log.Infof("URL params desc: %s", desc)
-
-	// log.Debugf("username is: [%s], password is [%s]", r.Username, r.Password)
-	if r.Username == "" {
-		SendResp(c, errno.New(errno.ErrUserNotFound, fmt.Errorf("username is empty")), nil)
-		return 
-	}
-
-	if r.Password == "" {
-		SendResp(c, fmt.Errorf("password is empty"), nil)
-		return
-	}
-
-	res := CreateResponse {
-		Username: admin,
-	}
-	
-
-	SendResp(c, nil, res)
-
-	// code, message := errno.DecodeErr(err)
-	// c.JSON(http.StatusOK, gin.H{"code": code, "message": message})
+	SendResp(c, nil, user)
 }
 
-// Create creates a new user account.
+// Delete delete an user by the user identifier.
 func Delete(c *gin.Context) {
-	// var r struct {
-	// 	Username string `json:"username"`
-	// 	Password string `json:"password"`
-	// }
-
-	var r CreateRequest
-
-	// var err error
-	if err := c.Bind(&r); err != nil {
-		// c.JSON(http.StatusOK, gin.H{"error": errno.ErrBind})
-		SendResp(c, errno.ErrBind, nil)
+	userId, _ := strconv.Atoi(c.Param("id"))
+	if err := model.DeleteUser(uint64(userId)); err != nil {
+		SendResp(c, errno.ErrDatabase, nil)
 		return
 	}
 
-	admin := c.Param("username")
-	// pw := c.PostForm("password")
-
-	// r = CreateRequest {
-	// 	Username: admin,
-	// 	Password: pw,
-	// }
-
-	log.Infof("URL username: %s", admin)
-
-	desc := c.Query("desc")
-	log.Infof("URL params desc: %s", desc)
-
-	// log.Debugf("username is: [%s], password is [%s]", r.Username, r.Password)
-	if r.Username == "" {
-		SendResp(c, errno.New(errno.ErrUserNotFound, fmt.Errorf("username is empty")), nil)
-		return 
-	}
-
-	if r.Password == "" {
-		SendResp(c, fmt.Errorf("password is empty"), nil)
-		return
-	}
-
-	res := CreateResponse {
-		Username: admin,
-	}
-	
-
-	SendResp(c, nil, res)
-
-	// code, message := errno.DecodeErr(err)
-	// c.JSON(http.StatusOK, gin.H{"code": code, "message": message})
+	SendResp(c, nil, nil)
 }
 
 
 // Create creates a new user account.
 func Update(c *gin.Context) {
-	// var r struct {
-	// 	Username string `json:"username"`
-	// 	Password string `json:"password"`
-	// }
+	log.Info("Update function called.", lager.Data{"X-Request-Id": util.GetReqID(c)})
+	// Get the user id from the url parameter.
+	userId, _ := strconv.Atoi(c.Param("id"))
 
-	var r CreateRequest
-
-	// var err error
-	if err := c.Bind(&r); err != nil {
-		// c.JSON(http.StatusOK, gin.H{"error": errno.ErrBind})
+	// Binding the user data.
+	var u model.UserModel
+	if err := c.Bind(&u); err != nil {
 		SendResp(c, errno.ErrBind, nil)
 		return
 	}
 
-	admin := c.Param("username")
-	// pw := c.PostForm("password")
+	// We update the record based on the user id.
+	u.Id = uint64(userId)
 
-	// r = CreateRequest {
-	// 	Username: admin,
-	// 	Password: pw,
-	// }
-
-	log.Infof("URL username: %s", admin)
-
-	desc := c.Query("desc")
-	log.Infof("URL params desc: %s", desc)
-
-	// log.Debugf("username is: [%s], password is [%s]", r.Username, r.Password)
-	if r.Username == "" {
-		SendResp(c, errno.New(errno.ErrUserNotFound, fmt.Errorf("username is empty")), nil)
-		return 
-	}
-
-	if r.Password == "" {
-		SendResp(c, fmt.Errorf("password is empty"), nil)
+	// Validate the data.
+	if err := u.Validate(); err != nil {
+		SendResp(c, errno.ErrValidation, nil)
 		return
 	}
 
-	res := CreateResponse {
-		Username: admin,
+	// Encrypt the user password.
+	if err := u.Encrypt(); err != nil {
+		SendResp(c, errno.ErrEncrypt, nil)
+		return
 	}
-	
 
-	SendResp(c, nil, res)
+	// Save changed fields.
+	if err := u.Update(); err != nil {
+		SendResp(c, errno.ErrDatabase, nil)
+		return
+	}
 
-	// code, message := errno.DecodeErr(err)
-	// c.JSON(http.StatusOK, gin.H{"code": code, "message": message})
+	SendResp(c, nil, nil)
 }
+
 
 // Create creates a new user account.
 func Index(c *gin.Context) {
-	// var r struct {
-	// 	Username string `json:"username"`
-	// 	Password string `json:"password"`
-	// }
-
-	var r CreateRequest
-
-	// var err error
+	var r ListRequest
 	if err := c.Bind(&r); err != nil {
-		// c.JSON(http.StatusOK, gin.H{"error": errno.ErrBind})
 		SendResp(c, errno.ErrBind, nil)
 		return
 	}
 
-	admin := c.Param("username")
-	// pw := c.PostForm("password")
-
-	// r = CreateRequest {
-	// 	Username: admin,
-	// 	Password: pw,
-	// }
-
-	log.Infof("URL username: %s", admin)
-
-	desc := c.Query("desc")
-	log.Infof("URL params desc: %s", desc)
-
-	// log.Debugf("username is: [%s], password is [%s]", r.Username, r.Password)
-	if r.Username == "" {
-		SendResp(c, errno.New(errno.ErrUserNotFound, fmt.Errorf("username is empty")), nil)
-		return 
-	}
-
-	if r.Password == "" {
-		SendResp(c, fmt.Errorf("password is empty"), nil)
+	infos, count, err := service.ListUser(r.Username, r.Offset, r.Limit)
+	if err != nil {
+		SendResp(c, err, nil)
 		return
 	}
 
-	res := CreateResponse {
-		Username: admin,
-	}
-	
-
-	SendResp(c, nil, res)
-
-	// code, message := errno.DecodeErr(err)
-	// c.JSON(http.StatusOK, gin.H{"code": code, "message": message})
+	SendResp(c, nil, ListResponse{
+		TotalCount: count,
+		UserList:   infos,
+	})
 }

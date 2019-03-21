@@ -10,6 +10,7 @@ import (
 	"go-study/config"
 	"go-study/router"
 	"go-study/model"
+	"go-study/router/middleware"
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/pflag"
@@ -31,11 +32,14 @@ func main() {
 	g := gin.New()
 	gin.SetMode(viper.GetString("runmode"))
 
-	middleW := []gin.HandlerFunc{}
+	// middleW := []gin.HandlerFunc{}
 
 	router.Load(
 		g,
-		middleW...,
+
+		middleware.RequestId(),
+		middleware.Logging(),
+		// middleW...,
 	)
 
 	go func() {
